@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="format-detection" content="telephone=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Protocoles">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Protocoles URCV</title>
+<!--
+  =====================================================================
+  Protocoles URCV — version mobile (iPhone / Android, hébergée sur GitHub Pages)
+  ---------------------------------------------------------------------
+  Ce fichier contient :
+    1. le style (verre « Apple », clair / sombre selon le téléphone)
+    2. le noyau : navigation (#/ et #/p/<id>), recherche, kit d'interface
+       partagé (URCV.ui) et enregistrement des protocoles (URCV.register)
+  Les protocoles sont des fichiers séparés dans /protocoles, chargés en bas
+  de page. Ajouter un protocole = déposer le fichier + une ligne <script>.
+  =====================================================================
+-->
+<style>
+/* ============================ THÈME ============================ */
+:root{
+  color-scheme: light dark;
+  --bg:#f2f2f7;
+  --ink:#1c1c1e; --ink2:rgba(60,60,67,.64); --ink3:rgba(60,60,67,.34);
+  --glass:rgba(255,255,255,.62); --glass-strong:rgba(250,250,252,.84);
+  --hair:rgba(60,60,67,.15); --hi:rgba(255,255,255,.95);
+  --fill:rgba(118,118,128,.12); --fill2:rgba(120,120,128,.22);
+  --thumb-n:#fff;
+  --blue:#007aff; --green:#34c759; --orange:#ff9500; --red:#ff3b30; --yellow:#e0a800;
+  --purple:#af52de; --teal:#30b0c7; --indigo:#5856d6; --pink:#ff2d55; --grey:#8e8e93;
+  --b1:rgba(0,122,255,.20); --b2:rgba(175,82,222,.14); --b3:rgba(48,176,199,.17);
+  --shadow:0 6px 24px rgba(0,0,0,.06);
+  --blur:blur(24px) saturate(180%);
+  --r:22px;
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","Segoe UI",Roboto,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#000;
+    --ink:#f5f5f7; --ink2:rgba(235,235,245,.62); --ink3:rgba(235,235,245,.3);
+    --glass:rgba(38,38,42,.58); --glass-strong:rgba(30,30,33,.86);
+    --hair:rgba(255,255,255,.11); --hi:rgba(255,255,255,.13);
+    --fill:rgba(118,118,128,.24); --fill2:rgba(120,120,128,.38);
+    --thumb-n:#636366;
+    --blue:#0a84ff; --green:#30d158; --orange:#ff9f0a; --red:#ff453a; --yellow:#ffd60a;
+    --purple:#bf5af2; --teal:#40c8e0; --indigo:#5e5ce6; --pink:#ff375f; --grey:#98989d;
+    --b1:rgba(10,132,255,.26); --b2:rgba(191,90,242,.17); --b3:rgba(64,200,224,.15);
+    --shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+}
+
+/* ============================ BASE ============================ */
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;min-height:100vh;color:var(--ink);background:var(--bg);font:16px/1.4 var(--font);
+  overflow-x:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+sup{font-size:.7em;line-height:0}
+
+/* fond : nappes de couleur floues, pour que le verre ait quelque chose à réfracter */
+.bg{position:fixed;inset:0;z-index:-1;background:var(--bg);pointer-events:none}
+.bg::before{content:"";position:absolute;inset:-12%;
+  background:
+    radial-gradient(42% 32% at 12% 6%, var(--b1), transparent 72%),
+    radial-gradient(38% 34% at 92% 28%, var(--b2), transparent 72%),
+    radial-gradient(48% 38% at 28% 88%, var(--b3), transparent 72%);
+  filter:blur(8px)}
+
+svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ============================ BARRE HAUTE ============================ */
+/* transparente en haut de page ; floutée (fondu progressif) quand le grand titre est sorti */
+.bar{position:fixed;left:0;right:0;top:0;z-index:30;height:calc(var(--st) + 58px);pointer-events:none}
+.bar::before{content:"";position:absolute;inset:0;background:linear-gradient(var(--glass-strong) 30%, transparent);
+  -webkit-backdrop-filter:blur(14px) saturate(170%);backdrop-filter:blur(14px) saturate(170%);
+  -webkit-mask-image:linear-gradient(#000 58%, transparent);mask-image:linear-gradient(#000 58%, transparent);
+  opacity:0;transition:opacity .25s}
+.bar.solid::before{opacity:1}
+.bar-in{position:absolute;left:0;right:0;top:calc(var(--st) + 6px);height:44px;display:flex;align-items:center;justify-content:center}
+.bar-title{font-weight:600;font-size:17px;max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  opacity:0;transform:translateY(5px);transition:opacity .22s, transform .22s}
+.bar.solid .bar-title{opacity:1;transform:none}
+.bar-btn{pointer-events:auto;position:absolute;top:0;width:44px;height:44px;border-radius:50%;border:0;padding:0;
+  display:grid;place-items:center;font-size:21px;color:var(--ink);cursor:pointer;
+  background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  box-shadow:inset 0 1px 0 var(--hi), inset 0 0 0 .5px var(--hair), 0 4px 14px rgba(0,0,0,.08);
+  transition:transform .15s}
+.bar-btn:active{transform:scale(.9)}
+.bar-btn.l{left:12px}.bar-btn.r{right:12px}
+.bar-btn[hidden]{display:none}
+.bar-btn svg{stroke-width:2.3}
+
+/* ============================ PAGES ============================ */
+main{max-width:720px;margin:0 auto;padding:calc(var(--st) + 58px) 16px calc(var(--sb) + 40px)}
+.large{margin:4px 4px 2px;font-size:clamp(27px,7.6vw,34px);line-height:1.12;font-weight:700;letter-spacing:.008em}
+.sub{margin:4px 4px 18px;color:var(--ink2);font-size:15px}
+#view.push{animation:push .38s cubic-bezier(.2,.85,.25,1)}
+#view.pop{animation:pop .32s cubic-bezier(.2,.85,.25,1)}
+#view.fade{animation:fade .25s ease-out}
+@keyframes push{from{transform:translateX(26%);opacity:0}}
+@keyframes pop{from{transform:translateX(-10%);opacity:0}}
+@keyframes fade{from{opacity:0}}
+
+/* ---------- accueil ---------- */
+.search{display:flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:999px;color:var(--ink2);
+  background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  border:.5px solid var(--hair);box-shadow:inset 0 1px 0 var(--hi), var(--shadow)}
+.search svg{font-size:18px}
+.search input{flex:1;min-width:0;height:100%;border:0;background:none;outline:none;color:var(--ink);font:17px var(--font);-webkit-appearance:none;appearance:none}
+.search input::placeholder{color:var(--ink3)}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none}
+.search-x{border:0;background:var(--ink3);color:var(--bg);width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;padding:0;cursor:pointer}
+.search-x[hidden]{display:none}
+.search-x svg{stroke-width:3.2}
+
+.grp-h{margin:24px 18px 7px;font-size:13px;font-weight:500;color:var(--ink2);text-transform:uppercase;letter-spacing:.03em}
+.list{border-radius:var(--r);overflow:hidden;
+  background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  border:.5px solid var(--hair);box-shadow:inset 0 1px 0 var(--hi), var(--shadow)}
+.row{position:relative;display:flex;align-items:center;gap:13px;min-height:64px;padding:10px 14px 10px 14px;color:inherit;text-decoration:none;transition:background .15s}
+.row + .row::before{content:"";position:absolute;top:0;left:63px;right:0;border-top:.5px solid var(--hair)}
+.row:active{background:var(--fill)}
+.tile{width:36px;height:36px;border-radius:10px;flex:none;display:grid;place-items:center;color:#fff;font-size:20px;
+  background:linear-gradient(160deg, color-mix(in srgb, var(--c) 78%, #fff), var(--c));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 2px 6px color-mix(in srgb, var(--c) 30%, transparent)}
+.tile svg{stroke-width:2.1}
+.row-x{flex:1;min-width:0}
+.row-t{display:block;font-size:17px;line-height:1.25}
+.row-s{display:block;font-size:13px;color:var(--ink2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .chev{color:var(--ink3);font-size:15px;stroke-width:2.6}
+.empty{text-align:center;color:var(--ink2);padding:48px 16px;font-size:15px}
+.home-foot{text-align:center;color:var(--ink3);font-size:12px;margin-top:28px}
+
+/* ============================ KIT D'INTERFACE (u-) ============================ */
+.u-h{margin:24px 18px 7px;font-size:13px;font-weight:500;color:var(--ink2);text-transform:uppercase;letter-spacing:.03em}
+.u-h:first-child{margin-top:4px}
+.u-card,.u-list{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  border:.5px solid var(--hair);box-shadow:inset 0 1px 0 var(--hi), var(--shadow);border-radius:var(--r)}
+.u-card{padding:14px 16px}
+.u-list{overflow:hidden}
+.u-list.flat{background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-radius:0}
+.u-blk{padding:12px 14px}
+
+/* lignes façon Réglages iOS */
+.u-li{position:relative;display:flex;align-items:center;gap:12px;min-height:50px;padding:9px 16px;cursor:default}
+.u-li + .u-li::before,.u-blk + .u-li::before,.u-li + .u-blk::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--hair)}
+.u-blk{position:relative}
+.u-li-t{flex:1;min-width:0;font-size:16px;line-height:1.3}
+.u-li-t small{display:block;font-size:13px;color:var(--ink2);margin-top:1px;line-height:1.3}
+.u-li-col{flex-direction:column;align-items:stretch;gap:8px;padding-top:11px;padding-bottom:12px}
+.u-li-btn{width:100%;border:0;background:none;text-align:left;color:var(--blue);cursor:pointer;font-size:16px}
+.u-li-btn:active,.u-sel:active{background:var(--fill)}
+.u-li-btn svg{font-size:19px}
+
+/* menu déroulant natif (roue iOS) caché sous la ligne */
+.u-sel{cursor:pointer}
+.u-sel select{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;cursor:pointer;-webkit-appearance:none;appearance:none;border:0}
+.u-sel-v{color:var(--ink2);font-size:16px;text-align:right;max-width:58%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-sel-v.ph{color:var(--ink3)}
+.u-sel > svg{color:var(--ink3);font-size:15px;margin-left:-6px}
+
+/* interrupteur iOS */
+.u-switch{position:relative;flex:none;width:51px;height:31px}
+.u-switch input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer;z-index:1}
+.u-switch i{position:absolute;inset:0;border-radius:999px;background:var(--fill2);transition:background .25s}
+.u-switch i::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;
+  box-shadow:0 3px 8px rgba(0,0,0,.15),0 1px 1px rgba(0,0,0,.14);transition:transform .32s cubic-bezier(.3,1.3,.5,1)}
+.u-switch input:checked + i{background:var(--green)}
+.u-switch input:checked + i::after{transform:translateX(20px)}
+.u-switch input:focus-visible + i{outline:2px solid var(--blue);outline-offset:2px}
+
+/* saisie numérique */
+.u-num{display:flex;align-items:baseline;gap:6px;flex:none}
+.u-num input{width:86px;border:0;background:none;outline:none;text-align:right;color:var(--ink);font:17px var(--font);font-variant-numeric:tabular-nums;padding:4px 0}
+.u-num input::placeholder{color:var(--ink3)}
+.u-num em{font-style:normal;font-size:14px;color:var(--ink2);white-space:nowrap}
+
+/* contrôle segmenté (capsule + pastille qui glisse) */
+.u-f + .u-f{margin-top:14px}
+.u-f-l{font-size:13px;font-weight:500;color:var(--ink2);margin:0 2px 7px}
+.u-seg{--i:0;--n:2;--thumb:var(--thumb-n);position:relative;display:flex;padding:2px;border-radius:999px;background:var(--fill)}
+.u-seg::before{content:"";position:absolute;top:2px;bottom:2px;left:2px;width:calc((100% - 4px) / var(--n));border-radius:999px;
+  background:var(--thumb);box-shadow:0 3px 8px rgba(0,0,0,.12),0 .5px 1px rgba(0,0,0,.1);
+  transform:translateX(calc(100% * var(--i)));transition:transform .34s cubic-bezier(.3,1.15,.45,1), opacity .2s, background .2s}
+.u-seg[data-empty]::before{opacity:0;transform:translateX(calc(100% * var(--i))) scale(.9)}
+.u-seg.u-instant::before{transition:opacity .2s}
+.u-seg button{flex:1;min-width:0;position:relative;z-index:1;border:0;background:none;cursor:pointer;min-height:34px;padding:6px 6px;
+  border-radius:999px;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .2s}
+.u-seg button[aria-pressed="true"]{font-weight:600}
+.u-seg.toned button[aria-pressed="true"]{color:#fff}
+
+/* pastille de verdict */
+.u-pill{flex:none;font-size:12px;font-weight:700;letter-spacing:.02em;padding:5px 11px;border-radius:999px;white-space:nowrap;
+  background:var(--fill);color:var(--ink3);border:1px solid transparent}
+.u-pill.blue{background:var(--blue);color:#fff}
+.u-pill.green{background:var(--green);color:#fff}
+.u-pill.red{background:var(--red);color:#fff}
+.u-pill.orange{background:var(--orange);color:#fff}
+.u-pill.amber{background:color-mix(in srgb,var(--orange) 16%,transparent);color:var(--orange);border-color:color-mix(in srgb,var(--orange) 45%,transparent)}
+.u-pill.grey{color:var(--ink2)}
+.u-pill.dash{background:none;border:1px dashed var(--ink3);color:var(--ink2)}
+
+/* bouton capsule */
+.u-btn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 16px;border-radius:999px;border:.5px solid var(--hair);cursor:pointer;
+  background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);color:var(--blue);font-size:15px;font-weight:500;
+  box-shadow:inset 0 1px 0 var(--hi)}
+
+/* organigramme : cadres reliés par des lignes qui poussent bord à bord */
+.u-flow{display:flex;flex-direction:column}
+.u-link{width:2px;height:18px;margin:0 auto;border-radius:1px;background:var(--ink3);transform-origin:top;animation:u-grow .26s ease-out both;animation-delay:var(--d,0ms)}
+@keyframes u-grow{from{transform:scaleY(0)}}
+.u-step{animation:u-rise .34s ease-out both;animation-delay:var(--d,0ms)}
+@keyframes u-rise{from{opacity:0;transform:translateY(6px)}}
+.u-node{--c:var(--grey);border-radius:18px;padding:12px 15px;
+  background:color-mix(in srgb, var(--c) 7%, var(--glass));-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  border:.5px solid var(--hair);box-shadow:inset 0 1px 0 var(--hi), var(--shadow)}
+.u-node.dx{background:color-mix(in srgb, var(--c) 15%, var(--glass));border-color:color-mix(in srgb, var(--c) 40%, transparent)}
+.u-node-t{font-size:16px;font-weight:650;line-height:1.3}
+.u-node.dx .u-node-t{color:color-mix(in srgb, var(--c) 72%, var(--ink))}
+.u-node-s{font-size:14px;color:var(--ink2);margin-top:2px;line-height:1.35}
+.u-node-n{font-size:13px;color:var(--ink2);margin-top:8px}
+.u-durees{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;align-items:center}
+.u-durees span{display:inline-flex;gap:6px;font-size:13px;padding:4px 10px;border-radius:999px;background:var(--fill)}
+.u-durees b{font-weight:650}
+.u-durees .lab{background:none;padding:4px 2px 4px 0;color:var(--ink2)}
+.u-warn{margin-top:9px;padding:8px 11px;border-radius:12px;font-size:13px;line-height:1.4;
+  background:color-mix(in srgb,var(--orange) 13%,transparent);color:color-mix(in srgb,var(--orange) 55%,var(--ink))}
+.u-ul{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:7px}
+.u-ul li{font-size:14px;line-height:1.35;padding-left:14px;position:relative}
+.u-ul li::before{content:"";position:absolute;left:2px;top:.55em;width:5px;height:5px;border-radius:50%;background:var(--c)}
+.u-ul li span{display:block;color:var(--ink2);font-size:13px}
+.u-hint{font-size:13px;color:var(--ink2);text-align:center;margin-top:12px}
+.u-hint:empty{display:none}
+.u-foot{font-size:12px;color:var(--ink3);line-height:1.5;margin:26px 6px 0}
+.u-err{color:var(--red)}
+
+/* feuille modale (bottom sheet) */
+.u-sheet-wrap{position:fixed;inset:0;z-index:60}
+#layer{transition:opacity .25s}
+html.sheet-open #layer{opacity:0;pointer-events:none}
+.u-sheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.28);opacity:0;transition:opacity .3s}
+.u-sheet{position:absolute;left:0;right:0;margin:0 auto;bottom:calc(8px + var(--sb));width:min(560px, calc(100% - 16px));max-height:84vh;
+  display:flex;flex-direction:column;border-radius:34px;
+  background:var(--glass-strong);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);
+  border:.5px solid var(--hair);box-shadow:0 24px 70px rgba(0,0,0,.28);
+  transform:translateY(calc(100% + 30px));transition:transform .4s cubic-bezier(.2,.9,.25,1)}
+.u-sheet-wrap.open .u-sheet-bg{opacity:1}
+.u-sheet-wrap.open .u-sheet{transform:translateY(var(--drag,0px))}
+.u-sheet-wrap.drag .u-sheet{transition:none}
+.u-sheet-top{touch-action:none;cursor:grab}
+.u-grab{width:36px;height:5px;border-radius:3px;background:var(--ink3);margin:7px auto 0}
+.u-sheet-h{display:flex;align-items:center;gap:10px;padding:8px 14px 6px 22px}
+.u-sheet-h b{flex:1;font-size:17px}
+.u-x{width:32px;height:32px;border-radius:50%;border:0;background:var(--fill);color:var(--ink2);display:grid;place-items:center;font-size:15px;cursor:pointer;padding:0}
+.u-x svg{stroke-width:2.6}
+.u-sheet-c{overflow:auto;padding:6px 22px 22px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+
+<header class="bar" id="bar">
+  <div class="bar-in">
+    <button type="button" class="bar-btn l" id="btnBack" aria-label="Retour aux protocoles" hidden></button>
+    <div class="bar-title" id="barTitle"></div>
+    <button type="button" class="bar-btn r" id="btnReset" aria-label="Réinitialiser la page" hidden></button>
+  </div>
+</header>
+
+<main id="view"></main>
+<div id="layer"></div>
+
+<script>
+/* =====================================================================
+   NOYAU
+   ===================================================================== */
+(() => {
+"use strict";
+
+/* ---------------- icônes (traits, 24 × 24) ---------------- */
+const ICONS = {
+  back:    '<path d="M15 5l-7 7 7 7"/>',
+  reset:   '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/>',
+  chev:    '<path d="M9 5.5l6.5 6.5L9 18.5"/>',
+  updown:  '<path d="M8 9.5l4-4 4 4M8 14.5l4 4 4-4"/>',
+  search:  '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  x:       '<path d="M7 7l10 10M17 7L7 17"/>',
+  info:    '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/>',
+  goutte:  '<path d="M12 3.5c3.4 4.1 5.6 7.2 5.6 10.1a5.6 5.6 0 0 1-11.2 0c0-2.9 2.2-6 5.6-10.1z"/>',
+  pouls:   '<path d="M3 12.5h3.6l2.2-5.5 4.2 10.5 2.3-5h5.7"/>',
+  thermo:  '<path d="M14 14.6V5.2a2 2 0 0 0-4 0v9.4a4 4 0 1 0 4 0z"/><path d="M12 10v6"/>',
+  check:   '<rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9.2 3.5h5.6M8.6 12.6l2.4 2.4 4.6-5"/>',
+  calc:    '<rect x="5" y="3" width="14" height="18" rx="3.2"/><path d="M8.5 7.5h7M8.6 12h.01M12 12h.01M15.4 12h.01M8.6 16h.01M12 16h.01M15.4 16h.01"/>',
+  coeur:   '<path d="M12 20s-7.2-4.4-7.2-10.1A4.1 4.1 0 0 1 12 7.3a4.1 4.1 0 0 1 7.2 2.6C19.2 15.6 12 20 12 20z"/>',
+  pilule:  '<rect x="3.5" y="8.5" width="17" height="7" rx="3.5" transform="rotate(-40 12 12)"/><path d="M9.7 9.4l4.9 4.9" />',
+  livre:   '<path d="M4.5 5.5A2 2 0 0 1 6.5 3.5h12v15h-12a2 2 0 0 0-2 2z"/><path d="M4.5 20.5a2 2 0 0 1 2-2h12v2"/>'
+};
+const icon = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ICONS.livre}</svg>`;
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const sansBalises = s => String(s ?? "").replace(/<[^>]*>/g, "");
+// recherche insensible aux accents et à la casse
+const norm = s => sansBalises(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/* ---------------- kit d'interface partagé par les protocoles ---------------- */
+const ui = {
+  esc, icon,
+
+  // "12,5" → 12.5 ; vide ou invalide → null
+  num(v) {
+    const s = String(v ?? "").trim().replace(",", ".");
+    if (s === "") return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  },
+  fmt(n, d = 0) { return Number(n).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d }); },
+
+  // injecte une feuille de style une seule fois (préfixer les classes du protocole)
+  css(id, txt) {
+    if (document.getElementById("css-" + id)) return;
+    const s = document.createElement("style");
+    s.id = "css-" + id; s.textContent = txt;
+    document.head.appendChild(s);
+  },
+
+  /* Contrôle segmenté. opts = [[valeur, libellé, couleur?], …] ; couleur = nom de variable (orange, blue…)
+     Re-toucher l'option active l'efface (sauf si data-fixed). */
+  seg(name, opts, value = null) {
+    const i = opts.findIndex(o => String(o[0]) === String(value));
+    const tone = i >= 0 ? opts[i][2] : null;
+    return `<div class="u-seg${tone ? " toned" : ""}" data-seg="${esc(name)}" role="group" style="--n:${opts.length};--i:${Math.max(i, 0)}${tone ? `;--thumb:var(--${tone})` : ""}"${i < 0 ? " data-empty" : ""}>` +
+      opts.map(([v, t, tn]) => `<button type="button" data-v="${esc(v)}"${tn ? ` data-tone="${tn}"` : ""} aria-pressed="${String(v) === String(value)}">${t}</button>`).join("") +
+      `</div>`;
+  },
+  setSeg(el, value) {
+    const bs = [...el.querySelectorAll("button")];
+    const i = value == null ? -1 : bs.findIndex(b => b.dataset.v === String(value));
+    bs.forEach((b, k) => b.setAttribute("aria-pressed", String(k === i)));
+    if (i < 0) { el.setAttribute("data-empty", ""); el.classList.remove("toned"); return; }
+    const etaitVide = el.hasAttribute("data-empty");
+    if (etaitVide) el.classList.add("u-instant");          // la pastille apparaît sur place, sans glisser
+    el.style.setProperty("--i", i);
+    const tn = bs[i].dataset.tone;
+    if (tn) { el.style.setProperty("--thumb", `var(--${tn})`); el.classList.add("toned"); }
+    else { el.style.removeProperty("--thumb"); el.classList.remove("toned"); }
+    el.removeAttribute("data-empty");
+    if (etaitVide) { void el.offsetWidth; el.classList.remove("u-instant"); }
+  },
+  onSeg(root, cb) {
+    root.addEventListener("click", e => {
+      const b = e.target.closest(".u-seg button");
+      if (!b || !root.contains(b)) return;
+      const el = b.parentElement;
+      const v = b.getAttribute("aria-pressed") === "true" && !el.hasAttribute("data-fixed") ? null : b.dataset.v;
+      ui.setSeg(el, v);
+      cb(el.dataset.seg, v, el);
+    });
+  },
+
+  /* Ligne « menu » façon Réglages : le <select> natif est invisible par-dessus (roue iOS).
+     opts = [[valeur, libellé], …] ; sans valeur par défaut → option vide « Choisir ». */
+  selRow(name, label, opts, value = null, { sub = "", placeholder = "Choisir" } = {}) {
+    const cur = opts.find(o => String(o[0]) === String(value));
+    const vide = value == null ? `<option value="">${esc(placeholder)}</option>` : "";
+    return `<label class="u-li u-sel"><span class="u-li-t">${label}${sub ? `<small>${sub}</small>` : ""}</span>` +
+      `<span class="u-sel-v${cur ? "" : " ph"}">${cur ? esc(cur[1]) : esc(placeholder)}</span>${icon("updown")}` +
+      `<select data-sel="${esc(name)}" aria-label="${esc(sansBalises(label))}">${vide}` +
+      opts.map(([v, t]) => `<option value="${esc(v)}"${String(v) === String(value) ? " selected" : ""}>${esc(t)}</option>`).join("") +
+      `</select></label>`;
+  },
+  onSel(root, cb) {
+    root.addEventListener("change", e => {
+      const s = e.target.closest("select[data-sel]");
+      if (!s) return;
+      const lab = s.parentElement.querySelector(".u-sel-v");
+      lab.textContent = s.selectedOptions[0] ? s.selectedOptions[0].textContent : "";
+      lab.classList.toggle("ph", s.value === "");
+      cb(s.dataset.sel, s.value === "" ? null : s.value, s);
+    });
+  },
+
+  /* Ligne avec interrupteur iOS */
+  swRow(name, label, checked = false, sub = "") {
+    return `<label class="u-li"><span class="u-li-t">${label}${sub ? `<small>${sub}</small>` : ""}</span>` +
+      `<span class="u-switch"><input type="checkbox" role="switch" data-sw="${esc(name)}"${checked ? " checked" : ""}><i></i></span></label>`;
+  },
+  onSw(root, cb) {
+    root.addEventListener("change", e => {
+      const i = e.target.closest("input[data-sw]");
+      if (i) cb(i.dataset.sw, i.checked, i);
+    });
+  },
+
+  /* Ligne de saisie numérique (virgule acceptée), unité à droite */
+  numRow(name, label, unit = "", { sub = "" } = {}) {
+    return `<label class="u-li"><span class="u-li-t">${label}${sub ? `<small>${sub}</small>` : ""}</span>` +
+      `<span class="u-num"><input type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="—" data-num="${esc(name)}" aria-label="${esc(sansBalises(label))}">${unit ? `<em>${unit}</em>` : ""}</span></label>`;
+  },
+  onNum(root, cb) {
+    root.addEventListener("input", e => {
+      const i = e.target.closest("input[data-num]");
+      if (i) cb(i.dataset.num, ui.num(i.value), i);
+    });
+  },
+
+  field(label, html) { return `<div class="u-f"><div class="u-f-l">${label}</div>${html}</div>`; },
+  pill(txt, kind = "") { return `<span class="u-pill ${kind}">${txt}</span>`; },
+
+  /* Organigramme. node : cadre ; dx : cadre « diagnostic » (teinté, titre en couleur) */
+  node({ tone = "grey", dx = false, titre = "", sous = "", corps = "" }) {
+    return `<div class="u-node${dx ? " dx" : ""}" style="--c:var(--${tone})"><div class="u-node-t">${titre}</div>` +
+      `${sous ? `<div class="u-node-s">${sous}</div>` : ""}${corps}</div>`;
+  },
+  // relie les cadres par des lignes qui poussent, cadre après cadre
+  chain(nodes, { lead = true } = {}) {
+    let d = 0, out = "";
+    nodes.forEach((n, k) => {
+      if (k > 0 || lead) { out += `<div class="u-link" style="--d:${d}ms"></div>`; d += 110; }
+      out += `<div class="u-step" style="--d:${d}ms">${n}</div>`;
+      d += 130;
+    });
+    return `<div class="u-flow">${out}</div>`;
+  },
+  durees(items, lab = "") {
+    return `<div class="u-durees">${lab ? `<span class="lab">${lab}</span>` : ""}${items.map(([n, v]) => `<span>${n}<b>${v}</b></span>`).join("")}</div>`;
+  },
+
+  /* Feuille modale qui monte du bas ; se ferme au tap sur le fond, à la croix ou en la tirant vers le bas */
+  sheet(titre, html) {
+    const w = document.createElement("div");
+    w.className = "u-sheet-wrap";
+    w.innerHTML = `<div class="u-sheet-bg"></div>
+      <div class="u-sheet" role="dialog" aria-modal="true" aria-label="${esc(sansBalises(titre))}">
+        <div class="u-sheet-top"><div class="u-grab"></div>
+          <div class="u-sheet-h"><b>${titre}</b><button type="button" class="u-x" aria-label="Fermer">${icon("x")}</button></div></div>
+        <div class="u-sheet-c">${html}</div>
+      </div>`;
+    document.body.appendChild(w);
+    document.documentElement.style.overflow = "hidden";
+    document.documentElement.classList.add("sheet-open");
+    requestAnimationFrame(() => requestAnimationFrame(() => w.classList.add("open")));
+    let ferme = false;
+    const close = () => {
+      if (ferme) return; ferme = true;
+      w.style.removeProperty("--drag");
+      w.classList.remove("open", "drag");
+      document.documentElement.style.overflow = "";
+      document.documentElement.classList.remove("sheet-open");
+      setTimeout(() => w.remove(), 380);
+    };
+    w.querySelector(".u-sheet-bg").addEventListener("click", close);
+    w.querySelector(".u-x").addEventListener("click", close);
+    // glisser vers le bas pour fermer
+    const top = w.querySelector(".u-sheet-top");
+    let y0 = null, dy = 0;
+    top.addEventListener("pointerdown", e => { if (e.target.closest(".u-x")) return; y0 = e.clientY; dy = 0; w.classList.add("drag"); top.setPointerCapture(e.pointerId); });
+    top.addEventListener("pointermove", e => { if (y0 == null) return; dy = Math.max(0, e.clientY - y0); w.style.setProperty("--drag", dy + "px"); });
+    const fin = () => { if (y0 == null) return; y0 = null; w.classList.remove("drag"); if (dy > 90) close(); else w.style.setProperty("--drag", "0px"); };
+    top.addEventListener("pointerup", fin);
+    top.addEventListener("pointercancel", fin);
+    ui._sheets.add(close);
+    return { close };
+  },
+  _sheets: new Set(),
+
+  // calque pour les éléments flottants (vidé à chaque changement de page)
+  get layer() { return document.getElementById("layer"); }
+};
+
+/* ---------------- registre des protocoles ----------------
+   URCV.register({
+     id: "ilc",                       // utilisé dans l'adresse #/p/ilc
+     titre: "…", court: "…",          // grand titre / titre de la barre
+     sous: "…",                       // sous-titre (liste + page)
+     cat: "Infectiologie",            // groupe sur l'accueil
+     couleur: "teal", icone: "goutte",
+     mots: "mots-clés pour la recherche",
+     render(root, ui) { … ; return fonctionDeNettoyage? }
+   })
+*/
+const protos = [];
+function register(def) {
+  if (!def || !def.id || typeof def.render !== "function") return console.warn("Protocole invalide", def);
+  if (protos.some(p => p.id === def.id)) return console.warn("Protocole en double :", def.id);
+  protos.push(def);
+}
+window.URCV = { register, ui };
+
+/* ---------------- navigation ---------------- */
+const $ = s => document.querySelector(s);
+const view = $("#view"), bar = $("#bar"), barTitle = $("#barTitle"), btnBack = $("#btnBack"), btnReset = $("#btnReset");
+btnBack.innerHTML = icon("back");
+btnReset.innerHTML = icon("reset");
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
+let current = null;       // null au démarrage, "home" ou l'objet protocole
+let cleanup = null;       // fonction de nettoyage renvoyée par render()
+let fromHome = false;     // ouvert depuis l'accueil → « retour » = history.back()
+let homeY = 0;            // position de défilement de l'accueil
+let query = "";           // texte de recherche conservé
+let io = null;
+
+function quitter() {
+  if (typeof cleanup === "function") { try { cleanup(); } catch (e) { console.error(e); } }
+  cleanup = null;
+  ui._sheets.forEach(f => f()); ui._sheets.clear();
+  ui.layer.innerHTML = "";
+  if (io) { io.disconnect(); io = null; }
+}
+function animer(cls) {
+  view.classList.remove("push", "pop", "fade");
+  void view.offsetWidth;
+  view.classList.add(cls);
+}
+view.addEventListener("animationend", e => { if (e.target === view) view.classList.remove("push", "pop", "fade"); });
+
+// barre floutée + petit titre dès que le grand titre passe sous la barre
+function suivreTitre(el) {
+  bar.classList.remove("solid");
+  if (!el || !("IntersectionObserver" in window)) return;
+  const h = Math.round(bar.getBoundingClientRect().height);
+  io = new IntersectionObserver(([en]) => bar.classList.toggle("solid", !en.isIntersecting), { rootMargin: `-${h}px 0px 0px 0px` });
+  io.observe(el);
+}
+
+function ouvrirAccueil() {
+  const avant = current;
+  quitter();
+  current = "home";
+  document.title = "Protocoles URCV";
+  barTitle.textContent = "Protocoles";
+  btnBack.hidden = true; btnReset.hidden = true;
+  view.innerHTML = `
+    <h1 class="large">Protocoles</h1>
+    <p class="sub">URCV · Réanimation cardio-vasculaire</p>
+    <label class="search">${icon("search")}
+      <input type="search" placeholder="Rechercher" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Rechercher un protocole">
+      <button type="button" class="search-x" aria-label="Effacer" hidden>${icon("x")}</button>
+    </label>
+    <div class="groups"></div>
+    <p class="home-foot">URCV · CHU Timone — AP-HM</p>`;
+  const inp = view.querySelector(".search input"), x = view.querySelector(".search-x");
+  inp.value = query;
+  const maj = () => { query = inp.value; x.hidden = !query; dessinerGroupes(); };
+  inp.addEventListener("input", maj);
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") inp.blur(); });
+  x.addEventListener("click", e => { e.preventDefault(); inp.value = ""; maj(); inp.focus(); });
+  maj();
+  suivreTitre(view.querySelector(".large"));
+  if (avant && avant !== "home") { animer("pop"); requestAnimationFrame(() => window.scrollTo(0, homeY)); }
+}
+
+function dessinerGroupes() {
+  const box = view.querySelector(".groups");
+  const mots = norm(query).trim().split(/\s+/).filter(Boolean);
+  const liste = protos.filter(p => {
+    const txt = norm([p.titre, p.court, p.sous, p.cat, p.mots].join(" "));
+    return mots.every(m => txt.includes(m));
+  });
+  if (!liste.length) { box.innerHTML = `<div class="empty">Aucun résultat pour « ${esc(query.trim())} »</div>`; return; }
+  const cats = [];
+  liste.forEach(p => { const c = p.cat || "Autres"; if (!cats.includes(c)) cats.push(c); });
+  box.innerHTML = cats.map(c => `
+    <div class="grp-h">${esc(c)}</div>
+    <div class="list">${liste.filter(p => (p.cat || "Autres") === c).map(p => `
+      <a class="row" href="#/p/${esc(p.id)}">
+        <span class="tile" style="--c:var(--${esc(p.couleur || "blue")})">${icon(p.icone)}</span>
+        <span class="row-x"><span class="row-t">${p.titre}</span>${p.sous ? `<span class="row-s">${p.sous}</span>` : ""}</span>
+        <svg class="chev" viewBox="0 0 24 24" aria-hidden="true">${ICONS.chev}</svg>
+      </a>`).join("")}
+    </div>`).join("");
+}
+
+function ouvrirProtocole(p, reinit = false) {
+  const avant = current;
+  if (avant === "home") homeY = window.scrollY;
+  quitter();
+  current = p;
+  document.title = `${sansBalises(p.court || p.titre)} · Protocoles URCV`;
+  barTitle.textContent = sansBalises(p.court || p.titre);
+  btnBack.hidden = false; btnReset.hidden = false;
+  view.innerHTML = `<h1 class="large">${p.titre}</h1>${p.sous ? `<p class="sub">${p.sous}</p>` : ""}<div class="proto" data-proto="${esc(p.id)}"></div>`;
+  window.scrollTo(0, 0);
+  const root = view.querySelector(".proto");
+  try { cleanup = p.render(root, ui) || null; }
+  catch (err) {
+    console.error(err);
+    root.innerHTML = `<div class="u-card u-err">Erreur dans le protocole « ${esc(p.id)} » : ${esc(err.message)}</div>`;
+  }
+  suivreTitre(view.querySelector(".large"));
+  if (reinit) animer("fade"); else if (avant) animer("push");
+}
+
+function router() {
+  const m = location.hash.match(/^#\/p\/([\w-]+)/);
+  const p = m && protos.find(x => x.id === m[1]);
+  if (p) { fromHome = current === "home"; ouvrirProtocole(p); }
+  else ouvrirAccueil();
+}
+
+btnBack.addEventListener("click", () => { if (fromHome) history.back(); else location.hash = "#/"; });
+btnReset.addEventListener("click", () => { if (current && current !== "home") ouvrirProtocole(current, true); });
+// « OK » du clavier numérique : on ferme le clavier
+document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches("input[data-num], input[inputmode]")) e.target.blur(); });
+window.addEventListener("hashchange", router);
+document.addEventListener("DOMContentLoaded", router);   // après le chargement des protocoles (scripts « defer »)
+
+/* ---------------- hors-ligne (GitHub Pages uniquement) ---------------- */
+if ("serviceWorker" in navigator && location.protocol === "https:" && !window.URCV_NO_SW) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+})();
+</script>
+
+<!-- ====================== PROTOCOLES (ordre = ordre sur l'accueil) ====================== -->
+<script src="protocoles/ilc.js" defer></script>
+<script src="protocoles/bilan_vasc.js" defer></script>
+<script src="protocoles/scores.js" defer></script>
+</body>
+</html>
